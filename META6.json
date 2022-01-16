@@ -7,7 +7,7 @@
   ],
   "depends": [
   ],
-  "description": "blah blah blah",
+  "description": "Provides Raku read access to a variety of spreadsheet formats using a Perl module",
   "license": "Artistic-2.0",
   "name": "Spreadsheets::Read",
   "perl": "6.d",

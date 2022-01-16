@@ -1,0 +1,29 @@
+=begin pod
+
+=head1 NAME
+
+Spreadsheets::Read - Provides Raku read access to a variety of spreadsheet formats using a Perl module
+
+=head1 SYNOPSIS
+
+=begin code :lang<raku>
+
+use Spreadsheets::Read;
+
+=end code
+
+=head1 DESCRIPTION
+
+Spreadsheets::Read is ...
+
+=head1 AUTHOR
+
+Tom Browder <tbrowder@acm.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2022 Tom Browder
+
+This library is free software; you may redistribute it or modify it under the Artistic License 2.0.
+
+=end pod
