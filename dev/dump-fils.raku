@@ -56,11 +56,11 @@ my $ifil = @f[$n];
 #use Spreadsheet::Read:from<Perl5>;
 
 #my $c = Spreadsheets::Classes::WorkbookSet.new;
-my $c = WorkbookSet.new;
+my $c = Workbook.new: $ifil;
 
 #=finish
 
-$c.read: :file($ifil), :$debug;
+#$c.read: :file($ifil), :$debug;
 if $debug {
     $c.dump;
 }
