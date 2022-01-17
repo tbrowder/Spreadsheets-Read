@@ -1,0 +1,18 @@
+Tasks for initial release:
+
++ reorg modules something like this:
+
+    lib/
+        # take advantage of roles and subclassing!!!
+        Spreadsheets.rakumod # includes subs for handling the generic code
+        Spreadsheets/
+            Utils.rakumod      # classes and subs for handling spreadsheets including the generic code
+            XLSX-Utils.rakumod # code ported from Perl module ?
+            # possible other modules with code ported from Perl modules
+
++ add more spreadsheets for testing
++ read an XLSX file (file 1) into a worksheet object
+  - enabling looping over the entire sheet
++ add tests for each type of spreadsheet input
++ add an examples dir with decent examples
++ add a CREDITS section

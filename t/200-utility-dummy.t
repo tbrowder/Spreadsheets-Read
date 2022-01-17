@@ -1,5 +1,7 @@
+use v6;
 use Test;
-use Spreadsheets::Read;
+use Spreadsheets;
+
 
 pass "replace me";
 
