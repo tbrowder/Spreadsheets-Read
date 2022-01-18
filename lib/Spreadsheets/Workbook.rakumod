@@ -1,97 +1,217 @@
-unit module Spreadsheets::Utils;
+unit class Spreadsheets::Workbook is export;
 
+use Spreadsheets::Classes;
+use Spreadsheets::Utils;
 use Text::Utils :normalize-string;
 
-constant $SPACES = '    ';
+    use Spreadsheet::Read:from<Perl5>;
+
+    # keys in the meta hash (book[0])
+    #   with string values
+    has $.quote   is rw = ''; # used for csv
+    has $.sepchar is rw = ''; # used for csv
+    has $.error   is rw = '';
+    has $.sheets  is rw;      # number of sheets
+
+    has $.parser  is rw;      # name of parser used
+    has $.type    is rw;      # of the parser used: xlsx, xls, csv, etc.
+    has $.version is rw;      # of the parser used
+    #   with array or hash values
+    has %.sheet   is rw;      # key: sheet name, value: index 1..N of N sheets
+
+    has $.no-trim is rw = 0; # default behavior is to trim trailing empty cells from each row
+
+    # the following appears to be redundant and will be ignored on read iff it
+    # only contains one element
+    #has @.parsers is rw;      # array of parser pairs hashes, keys: name, type, version
+
+    # convenience attrs
+    has Sheet @.Sheet; # array of Sheet objects
+    # input file attrs:
+    has $.file     = '';
+    has $.basename = '';
+    has $.path     = '';
+
+    #method new($fname) {
+    #    self.bless(:file($fname))
+    #}
+
+    method read(:$file!, :$debug) {
+        my $basename = $file.IO.basename;
+        my $path     = $file.IO.absolute;
+        if !$path.IO.f {
+            note "FATAL: File '$file' cannot be read.";
+            exit;
+        }
+
+        #collect-file-data(:$path, :$wb, :$debug);
+        self.collect-file-data(:$path, :$debug);
+    }
+
+    #method dump(:$index!, :$debug) {
+    method dump(:$debug) {
+        #say "DEBUG: dumping workbook index $index, file basename: {$.basename}";
+        say "DEBUG: dumping workbook, file basename: {$.basename}";
+        say "  == \%.sheet hash:";
+        for %.sheet.keys.sort -> $k {
+            my $v = %.sheet{$k};
+            say "    '$k' => '$v'";
+        }
+        say "DEBUG: dumping sheet row/cols";
+        my $i = 0;
+        for @.Sheet -> $s {
+            ++$i;
+            say "=== sheet $i...";
+            #$s.dump;
+            try {
+                $s.dump-csv;
+            }
+            if $! {
+                say "=== one or more failures while dumping sheet $i...";
+            }
+        }
+
+    }
+
+    method copy {
+        # returns a copy of this Workbook object
+    }
+
+#} # end of class Workbook
+
 
 #### subroutines ####
-sub dump-array(@a, :$level is copy = 0, :$debug) is export {
-    my $sp = $level ?? $SPACES x $level !! '';
-    for @a.kv -> $i, $v {
-        my $t = $v.^name;
+method collect-file-data(
+    :$path, 
+    #Workbook :$wb!, 
+    :$debug) is export {
+    use Spreadsheet::Read:from<Perl5>;
 
-        print "$sp index $i, value type: $t";
-        if $t ~~ /Hash/ {
-            my $ne = $v.elems;
-            say ", num elems: $ne";
-            dump-hash $v, :level(++$level), :$debug;
-        }
-        elsif $t ~~ /Array/ {
-            # we may have an undef array
-            my $val = $v // '';
-            if $val {
-                my $ne = $v.elems;
-                say ", num elems: $ne";
-                dump-array $v, :level(++$level), :$debug;
-            }
-            else {
-                say();
-                say "$sp   (undef array)";
-            }
-        }
-        else {
-            say();
-            my $s = $v // '';
-            say "$sp   value: '$s'";
-        }
-    }
-} # sub dump-array
+    #my $pbook = ReadData $path, :attr, :clip, :strip(3); # array of hashes
+    #my $pbook = Spreadsheet::Read::ReadData($path, 'attr' => 1, 'clip' => 1, 'strip' => 3); # array of hashes
+    #my $pbook = Spreadsheet::Read::ReadData($path, 'clip' => 1, 'strip' => 3); # array of hashes
+    my $pbook = Spreadsheet::Read::ReadData($path, 'clip' => 1, 'strip' => 3, 'debug' => 1); # array of hashes
 
-sub dump-hash(%h, :$level is copy = 0, :$debug) is export {
-    my $sp = $level ?? $SPACES x $level !! '';
-    for %h.keys.sort -> $k {
-        my $v = %h{$k} // '';
-        my $t = $v.^name;
-
-
-        if $k ~~ /^ (<[A..Z]>+) (<[1..9]> <[0..9]>?) $/ {
-            # collect the Excel A1 hashes
-            my $col = ~$0;
-            my $row = +$1;
-            my $colrow = $col ~ $row.Str;
-
-            note "DEBUG: found A1 Excel colrow id: '$k'" if $debug;
-            if $t !~~ Str {
-                note "WARNING: its value type is not Str it's: $t";
-            }
-            else {
-                note "  DEBUG: with value: '$v'" if $debug;
+    my $ne = $pbook.elems;
+    say "\$book has $ne elements indexed from zero" if $debug;
+    my %h = $pbook[0];
+    #collect-book-data %h, :$wb, :$debug;
+    self.collect-book-data(%h, :$debug);
 
 =begin comment
-                # need to confirm sheet num and its existence
-                my $s = $wb.sheet[$sheet-1];
-
-                # insert key and val in the sheet's %colrow hash
-                $s.colrow{$k} = $v;
+my @rows = Spreadsheet::Read::rows($pbook[1]<cell>);
+say @rows.gist;
+#say "DEBUG exit";exit;
 =end comment
-            }
-        }
-        elsif $k eq 'cell' {
-            # collect the cell[col][row] values
-        }
 
-        say "$sp key: $k, value type: $t";
-        if $t ~~ /Hash/ {
-            dump-hash $v, :level(++$level), :$debug;
+    # get all the sheet data
+    for 1..^$ne -> $index {
+        %h    = $pbook[$index];
+        my $s = Sheet.new;
+        #$wb.Sheet.push: $s;
+        $.Sheet.push: $s;
+        self.collect-sheet-data(%h, :$index, :$s, :$debug);
+    }
+
+} # method collect-file-data
+
+#| Given the zeroth hash from Spreadsheet::Read and a
+#| Workbook object, collect the meta data for the workbook.
+method collect-book-data(
+    %h, 
+    #Workbook :$wb!, 
+    :$debug) is export {
+#sub collect-book-data(%h, :$debug) is export {
+
+    constant %known-keys = [
+        error    => 0,
+        quote    => 0,
+        sepchar  => 0,
+        sheets   => 0,
+
+        parser   => 0,
+        type     => 0,
+        version  => 0,
+
+        parsers  => 0, # not used at the moment as it appears to be redundant
+        sheet    => 0,
+    ];
+
+    my %keys-seen = %known-keys;
+    say "DEBUG: collecting book meta data..." if $debug;
+    for %h.kv -> $k, $v {
+        say "  found key '$k'..." if $debug;
+        note "WARNING: Unknown key '$k' in workbook meta data" unless %known-keys{$k}:exists;
+        if $k eq 'error' {
+            ++%keys-seen{$k};
+            $.error = $v;
         }
-        elsif $t ~~ /Array/ {
-            # we may have an undef array
-            my $val = $v // '';
-            if $val {
-                dump-array $v, :level(++$level), :$debug;
-            }
-            else {
-                say "$sp   (undef array)";
-            }
+        elsif $k eq 'parser' {
+            ++%keys-seen{$k};
+            $.parser = $v;
         }
-        else {
-            my $s = $v // '';
-            say "$sp   value: '$s'";
+        elsif $k eq 'quote' {
+            ++%keys-seen{$k};
+            $.quote = $v;
+        }
+        elsif $k eq 'sepchar' {
+            ++%keys-seen{$k};
+            $.sepchar = $v;
+        }
+        elsif $k eq 'sheets' {
+            ++%keys-seen{$k};
+            $.sheets = $v;
+        }
+        elsif $k eq 'type' {
+            ++%keys-seen{$k};
+            $.type = $v;
+        }
+        elsif $k eq 'version' {
+            ++%keys-seen{$k};
+            $.version = $v;
+        }
+        # special handling required
+        elsif $k eq 'sheet' {
+            ++%keys-seen{$k};
+            $.sheet = get-wb-sheet-hash $v;
+        }
+        # special handling required
+        elsif $k eq 'parsers' {
+            ++%keys-seen{$k};
+            # This appears to be redundant and will
+            # be ignored as long as it only contains
+            # one element. The one element is an anonymous
+            # hash of three key/values (parser, type, version), all
+            # which are already single-value attributes.
+            my $ne = $v.elems;
+            if $ne != 1 {
+                die "FATAL: Expected one element but got $ne elements";
+            }
         }
     }
-} # sub dump-hash
 
-=begin comment
+    # ensure we have the parser, type, and version values as a sanity
+    # check on our understanding of the read data format
+    my $err = 0;
+    if not $.parser {
+        ++$err;
+        note "WARNING: no 'parser' found in meta data";
+    }
+    if not $.type {
+        ++$err;
+        note "WARNING: no 'type' found in meta data";
+    }
+    if not $.version {
+        ++$err;
+        note "WARNING: no 'version' found in meta data";
+    }
+    if $err {
+        note "POSSIBLE BAD READ OF FILE '$.path' PLEASE FILE AN ISSUE";
+    }
+
+
+} # method collect-book-data
+
 sub get-wb-parsers-array($v) is export {
     my $t = $v.^name; # expect Perl5 Array
     my @a;
@@ -378,7 +498,5 @@ sub colrow2cell($a1-id, :$debug) is export {
     # row/col form.
     my ($i, $j);
 
-
     return $i, $j;
 } # sub colrow2cell
-=end comment

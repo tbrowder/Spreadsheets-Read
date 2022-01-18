@@ -4,7 +4,7 @@ use Text::Utils :normalize-string;
 
 use lib <../lib>;
 
-use Spreadsheets::Utils;
+use Spreadsheets::Read;
 
 my @f =
 "../t/data/sample-security-sales.xlsx",
@@ -56,7 +56,7 @@ my $ifil = @f[$n];
 #use Spreadsheet::Read:from<Perl5>;
 
 #my $c = Spreadsheets::Classes::WorkbookSet.new;
-my $c = Workbook.new: $ifil;
+my $c = Spreadsheets::Read.new: $ifil;
 
 #=finish
 

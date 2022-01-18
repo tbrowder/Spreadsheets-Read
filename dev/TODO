@@ -4,7 +4,8 @@ Tasks for initial release:
 
     lib/
         # take advantage of roles and subclassing!!!
-        Spreadsheets.rakumod # includes subs for handling the generic code
+        Spreadsheets/
+            Read.rakumod # includes subs for handling the generic code
         Spreadsheets/
             Utils.rakumod      # classes and subs for handling spreadsheets including the generic code
             XLSX-Utils.rakumod # code ported from Perl module ?
