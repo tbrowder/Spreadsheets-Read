@@ -16,6 +16,7 @@ class Cell is export {
     #| these data come from Spreadsheet::Read's 'attr' key's value
     #| which is an array of arrays of hashes
     has %.fmt is rw;
+    has $.attr is rw;
 
     method copy(:$no-value, :$debug) {
         #! returns a copy of this Cell object
@@ -83,7 +84,7 @@ class Sheet is export {
             for $row.cell.kv -> $j, $c {
                 print "," if $j;
                 try {
-                    if $c ~~ Cell and $c.value {
+                    if $c ~~ Cell and $c.value.defined {
                         print "{$c.value}";
                     }
                 }
@@ -308,9 +309,14 @@ class Sheet is export {
                 ++$i;
                 ++$max if $i > $max;
                 # it may be undef
-                my $cell = $rowcell // Nil;
+                try my $cell = $rowcell.defined ?? $rowcell !! '';
+                if $! {
+                    note "== bad cell $j, row $i";
+                    note $!.Str;
+                    next;
+                }
                 my $c = Cell.new: :$i, :$j;
-                $c.value = $cell unless $cell ~~ Any:U; #eq '(empty)';
+                $c.value = $cell; # unless $cell ~~ Any:U; #eq '(empty)';
                 self.add-cell: $c;
                 if $debug {
                     say "      reading cell $i, $j";
