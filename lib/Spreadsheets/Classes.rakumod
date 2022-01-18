@@ -82,8 +82,14 @@ class Sheet is export {
             my $ncols = $row.cell.elems;
             for $row.cell.kv -> $j, $c {
                 print "," if $j;
-                if $c ~~ Cell and $c.value {
-                    print "{$c.value}";
+                try {
+                    if $c ~~ Cell and $c.value {
+                        print "{$c.value}";
+                    }
+                }
+                if $! {
+                    note "=== failure while dumping sheet $.indx ({$.label}), row $i, cell $j";
+                    note $!.Str;
                 }
             }
             #say();

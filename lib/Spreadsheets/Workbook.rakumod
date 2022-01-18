@@ -4,54 +4,56 @@ use Spreadsheets::Classes;
 use Spreadsheets::Utils;
 use Text::Utils :normalize-string;
 
-    use Spreadsheet::Read:from<Perl5>;
+use Spreadsheet::Read:from<Perl5>;
 
-    # keys in the meta hash (book[0])
-    #   with string values
-    has $.quote   is rw = ''; # used for csv
-    has $.sepchar is rw = ''; # used for csv
-    has $.error   is rw = '';
-    has $.sheets  is rw;      # number of sheets
+# keys in the meta hash (book[0])
+#   with string values
+has $.quote   is rw = ''; # used for csv
+has $.sepchar is rw = ''; # used for csv
+has $.error   is rw = '';
+has $.sheets  is rw;      # number of sheets
 
-    has $.parser  is rw;      # name of parser used
-    has $.type    is rw;      # of the parser used: xlsx, xls, csv, etc.
-    has $.version is rw;      # of the parser used
-    #   with array or hash values
-    has %.sheet   is rw;      # key: sheet name, value: index 1..N of N sheets
+has $.parser  is rw;      # name of parser used
+has $.type    is rw;      # of the parser used: xlsx, xls, csv, etc.
+has $.version is rw;      # of the parser used
+#   with array or hash values
+has %.sheet   is rw;      # key: sheet name, value: index 1..N of N sheets
 
-    has $.no-trim is rw = 0; # default behavior is to trim trailing empty cells from each row
+has $.no-trim is rw = 0; # default behavior is to trim trailing empty cells from each row
 
-    # the following appears to be redundant and will be ignored on read iff it
-    # only contains one element
-    #has @.parsers is rw;      # array of parser pairs hashes, keys: name, type, version
+# the following appears to be redundant and will be ignored on read iff it
+# only contains one element
+#has @.parsers is rw;      # array of parser pairs hashes, keys: name, type, version
 
-    # convenience attrs
-    has Sheet @.Sheet; # array of Sheet objects
-    # input file attrs:
-    has $.file     = '';
-    has $.basename = '';
-    has $.path     = '';
+# convenience attrs
+has Sheet @.Sheet; # array of Sheet objects
+# input attrs:
+has $.file is required;
+has $.debug;
 
-    #method new($fname) {
-    #    self.bless(:file($fname))
-    #}
+has $.basename;
 
-    method read(:$file!, :$debug) {
-        my $basename = $file.IO.basename;
-        my $path     = $file.IO.absolute;
-        if !$path.IO.f {
-            note "FATAL: File '$file' cannot be read.";
-            exit;
-        }
+submethod TWEAK {
+    $!basename = $!file.IO.basename;
+    self.read($!file)
+}
 
-        #collect-file-data(:$path, :$wb, :$debug);
-        self.collect-file-data(:$path, :$debug);
+#method new($fname) {
+#    self.bless(:file($fname))
+#}
+
+method read($file) {
+    my $path = $file.IO.absolute // die "WARNING: no valid path";
+    if !$path.IO.f {
+        note "FATAL: File '$file' cannot be read.";
+        exit;
     }
 
-    #method dump(:$index!, :$debug) {
-    method dump(:$debug) {
-        #say "DEBUG: dumping workbook index $index, file basename: {$.basename}";
-        say "DEBUG: dumping workbook, file basename: {$.basename}";
+    self.collect-file-data(:$path);
+}
+
+method dump {
+    say "DEBUG: dumping workbook, file basename: {$.basename}";
         say "  == \%.sheet hash:";
         for %.sheet.keys.sort -> $k {
             my $v = %.sheet{$k};
@@ -68,6 +70,7 @@ use Text::Utils :normalize-string;
             }
             if $! {
                 say "=== one or more failures while dumping sheet $i...";
+                say $!.Str;
             }
         }
 
@@ -110,18 +113,15 @@ say @rows.gist;
         my $s = Sheet.new;
         #$wb.Sheet.push: $s;
         $.Sheet.push: $s;
-        self.collect-sheet-data(%h, :$index, :$s, :$debug);
+        #self.collect-sheet-data(%h, :$index, :$s, :$debug);
+        collect-sheet-data(%h, :$index, :$s, :$debug);
     }
 
 } # method collect-file-data
 
 #| Given the zeroth hash from Spreadsheet::Read and a
 #| Workbook object, collect the meta data for the workbook.
-method collect-book-data(
-    %h, 
-    #Workbook :$wb!, 
-    :$debug) is export {
-#sub collect-book-data(%h, :$debug) is export {
+method collect-book-data(%h, :$debug) {
 
     constant %known-keys = [
         error    => 0,
@@ -173,7 +173,7 @@ method collect-book-data(
         # special handling required
         elsif $k eq 'sheet' {
             ++%keys-seen{$k};
-            $.sheet = get-wb-sheet-hash $v;
+            %.sheet = get-wb-sheet-hash $v;
         }
         # special handling required
         elsif $k eq 'parsers' {

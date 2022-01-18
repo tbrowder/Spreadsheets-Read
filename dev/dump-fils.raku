@@ -55,7 +55,7 @@ my $ifil = @f[$n];
 
 #use Spreadsheet::Read:from<Perl5>;
 
-#my $c = Spreadsheets::Classes::WorkbookSet.new;
+say "Using file '$ifil'";
 my $c = Spreadsheets::Read.new: $ifil;
 
 #=finish
