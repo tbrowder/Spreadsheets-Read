@@ -484,16 +484,27 @@ sub get-typ-and-val($v, :$debug) is export {
     return ($t, $vv, $ne);
 } # sub get-typ-and-val
 
+
+#| Given a row/col pair, zero-indexed, transform it to an Excel A1 style colrow id
+sub cell2colrow(UInt $i, UInt $j) is export {
+    my $col = col2label $j + 1;
+    my $row = $i + 1;
+    $col ~ $row
+} # sub cell2colrow
+
 #| Given an Excel A1 style colrow id, transform it to zero-based
 #| row/col form.
 sub colrow2cell($a1-id, :$debug) is export {
-    my ($i, $j);
+    my ($i, $j); # row, col
 
     #                    column           row
     if $a1-id ~~ /^ :i (<[a..z]>+) (<[1..9]> <[0..9]>*) $/ {
         my $a = ~$0; # column value
         my $b = +$1; # row value
+
         # TODO convert the pieces to row-col zero-indexed
+        $i = $b - 1;
+        $j = label2col($a) - 1;
     }
     else {
         die "ERROR: Invalid A1 format: '$a1-id'"
@@ -521,5 +532,4 @@ sub label2col($label is copy where $label ~~ /^:i <[A..Z]>+$/) is export {
     }
     $col
 } # sub label2col
-
 
