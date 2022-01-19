@@ -35,17 +35,17 @@ has $.basename;
 
 submethod TWEAK {
     $!basename = $!file.IO.basename;
-    self.read($!file)
+    self.read($!file, :debug($!debug))
 }
 
-method read($file) {
+method read($file, :$debug) {
     my $path = $file.IO.absolute // die "WARNING: no valid path";
     if !$path.IO.f {
         note "FATAL: File '$file' cannot be read.";
         exit;
     }
 
-    self.collect-file-data(:$path);
+    self.collect-file-data(:$path, :$debug);
 }
 
 method dump {
@@ -75,21 +75,17 @@ method copy {
     # returns a copy of this Workbook object
 }
 
-method collect-file-data(
-    :$path, 
-    #Workbook :$wb!, 
-    :$debug) is export {
+method collect-file-data(:$path, :$debug) is export {
     use Spreadsheet::Read:from<Perl5>;
 
     #my $pbook = ReadData $path, :attr, :clip, :strip(3); # array of hashes
     #my $pbook = Spreadsheet::Read::ReadData($path, 'attr' => 1, 'clip' => 1, 'strip' => 3); # array of hashes
     #my $pbook = Spreadsheet::Read::ReadData($path, 'clip' => 1, 'strip' => 3); # array of hashes
-    my $pbook = Spreadsheet::Read::ReadData($path, 'clip' => 1, 'strip' => 3, 'debug' => 1); # array of hashes
+    my $pbook = Spreadsheet::Read::ReadData($path, 'clip' => 1, 'strip' => 3, 'debug' => $debug); # array of hashes
 
     my $ne = $pbook.elems;
     say "\$book has $ne elements indexed from zero" if $debug;
     my %h = $pbook[0];
-    #collect-book-data %h, :$wb, :$debug;
     self.collect-book-data(%h, :$debug);
 
 =begin comment
@@ -102,9 +98,7 @@ say @rows.gist;
     for 1..^$ne -> $index {
         %h    = $pbook[$index];
         my $s = Sheet.new;
-        #$wb.Sheet.push: $s;
         $.Sheet.push: $s;
-        #self.collect-sheet-data(%h, :$index, :$s, :$debug);
         collect-sheet-data(%h, :$index, :$s, :$debug);
     }
 
@@ -292,7 +286,7 @@ sub collect-sheet-data(%h, :$index, Sheet :$s!, :$debug) is export {
 
             my ($t, $vv, $ne) = get-typ-and-val $v;
             # this SHOULD be an array OR undef
-            say "DEBUG dumping type $t with $ne elements";
+            say "DEBUG dumping type $t with $ne elements" if $debug > 1;
             # col first
             my $j = -1;
 
@@ -301,14 +295,16 @@ sub collect-sheet-data(%h, :$index, Sheet :$s!, :$debug) is export {
                die "Unexpected type $t";
             }
             if $t ~~ /Array/ {
-                dump-array $a, :$debug;
-                say "DEBUG: early exit";exit;
+                if $debug > 1 {
+                    dump-array($a, :$debug);
+                    say "DEBUG: early exit";exit;
+                }
             }
 
             for $a -> $b {
                 ++$j;
                 ($t, $vv, $ne) = get-typ-and-val $b;
-                say "    dumping type $t with $ne elements";
+                say "    dumping type $t with $ne elements" if $debug > 1;
 
                 my $aa = $a // '';
                 $t = $aa.^name;
