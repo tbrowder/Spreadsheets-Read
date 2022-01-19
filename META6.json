@@ -12,7 +12,11 @@
   "name": "Spreadsheets::Read",
   "perl": "6.d",
   "provides": {
-    "Spreadsheets::Read": "lib/Spreadsheets/Read.rakumod"
+    "Spreadsheets::Classes": "lib/Spreadsheets/Classes.rakumod",
+    "Spreadsheets::Read": "lib/Spreadsheets/Read.rakumod",
+    "Spreadsheets::Utils": "lib/Spreadsheets/Utils.rakumod",
+    "Spreadsheets::Workbook": "lib/Spreadsheets/Workbook.rakumod",
+    "Spreadsheets::XLSX-Utils": "lib/Spreadsheets/XLSX-Utils.rakumod"
   },
   "resources": [
   ],

@@ -58,13 +58,13 @@ This module is designed to treat data as a two-dimensional array of data cells (
 
 A CSV spreadsheet may have the first row defined as a header row with unique identifiers as keys to a hash of each column.
 
-Spreadsheet arrays may be acccessed in various ways to suit the tastes of the user. For example, given a spreadsheet `$s`:
+Spreadsheet cells may be acccessed in various ways to suit the tastes of the user. For example, given a spreadsheet `$s`:
 
 ### Single cell (e.g., row 0, column 2)
 
 <table class="pod-table">
 <tbody>
-<tr> <td>$s.cell(0,2)</td> <td></td> </tr> <tr> <td>$s.rowcol(0,2)</td> <td></td> </tr> <tr> <td>$s.colrow(2,0)</td> <td></td> </tr> <tr> <td>$s[0;2]</td> <td>Raku syntax</td> </tr> <tr> <td>$s&lt;c1&gt;</td> <td>Excel syntax</td> </tr> <tr> <td>$s&lt;C1&gt;</td> <td>Excel syntax</td> </tr>
+<tr> <td>$s.cell(0,2)</td> <td></td> </tr> <tr> <td>$s.rowcol(0,2)</td> <td></td> </tr> <tr> <td>$s.colrow(2,0)</td> <td></td> </tr> <tr> <td>$s[0;2]</td> <td>Raku syntax</td> </tr> <tr> <td>$s&lt;c1&gt;</td> <td>Excel A1 syntax</td> </tr> <tr> <td>$s&lt;C1&gt;</td> <td>Excel A1 syntax</td> </tr>
 </tbody>
 </table>
 
@@ -72,7 +72,7 @@ Spreadsheet arrays may be acccessed in various ways to suit the tastes of the us
 
 <table class="pod-table">
 <tbody>
-<tr> <td>$s.row(0)</td> <td>the entire row</td> </tr> <tr> <td>$s[0;0..2]</td> <td>row 0, columns 0 through 2</td> </tr> <tr> <td>$s&lt;1&gt;</td> <td>Excel syntax</td> </tr>
+<tr> <td>$s.row(0)</td> <td>the entire row</td> </tr> <tr> <td>$s[0;0..2]</td> <td>row 0, columns 0 through 2</td> </tr> <tr> <td>$s&lt;1&gt;</td> <td>Excel A1 syntax</td> </tr>
 </tbody>
 </table>
 
@@ -80,7 +80,7 @@ Spreadsheet arrays may be acccessed in various ways to suit the tastes of the us
 
 <table class="pod-table">
 <tbody>
-<tr> <td>$s.col(0)</td> <td>the entire column</td> </tr> <tr> <td>$s[;0]</td> <td></td> </tr> <tr> <td>$s&lt;a&gt;</td> <td>Excel syntax</td> </tr> <tr> <td>$s[0..2;0]</td> <td>column 0, rows 0 through 2</td> </tr> <tr> <td>$s.col(0,0..2)</td> <td>column 0, rows 0 through 2</td> </tr>
+<tr> <td>$s.col(0)</td> <td>the entire column</td> </tr> <tr> <td>$s[;0]</td> <td></td> </tr> <tr> <td>$s&lt;a&gt;</td> <td>Excel A1 syntax</td> </tr> <tr> <td>$s[0..2;0]</td> <td>column 0, rows 0 through 2</td> </tr> <tr> <td>$s.col(0,0..2)</td> <td>column 0, rows 0 through 2</td> </tr>
 </tbody>
 </table>
 
@@ -88,14 +88,14 @@ Spreadsheet arrays may be acccessed in various ways to suit the tastes of the us
 
 <table class="pod-table">
 <tbody>
-<tr> <td>$s.rowcol(0..2,0..1)</td> <td></td> </tr> <tr> <td>$s[0..2;0..1]</td> <td></td> </tr> <tr> <td>$s&lt;a1:c2&gt;</td> <td>Excel syntax</td> </tr>
+<tr> <td>$s.rowcol(0..2,0..1)</td> <td></td> </tr> <tr> <td>$s[0..2;0..1]</td> <td></td> </tr> <tr> <td>$s&lt;a1:c2&gt;</td> <td>Excel A1 syntax</td> </tr>
 </tbody>
 </table>
 
 Data model
 ----------
 
-The data model is based on the one described and used in Perl module `Spreadsheet::Read`. Its data elements are used to populate the classes described above (with adjustments to transform the 1-indexed rows and columns to the zero-indexed rows and columns of this module).
+The data model is based on the one described and used in Perl module `Spreadsheet::Read`. Its data elements are used to populate the classes described above (with adjustments to transform the 1-indexed rows and columns to the zero-indexed rows and columns of this module). Note all cells with 'Undef' values are converted to an empty string (`''`) in the Raku object. Additionally, sheets are trimmed to remove trailing empty rows and remaining rows are trimmed to the length of the row with the greatest non-empty cell column index.
 
     $book = [
         # Entry 0 is the overall control hash
