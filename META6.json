@@ -6,6 +6,7 @@
   "build-depends": [
   ],
   "depends": [
+    "Text::Utils"
   ],
   "description": "Provides Raku read access to a variety of spreadsheet formats using a Perl module",
   "license": "Artistic-2.0",
