@@ -109,3 +109,29 @@ for @idx -> $i {
     }
 }
 
+#class Sheet is export {
+#    has Row @.row;      # an array of Row objects (each Row object has an array of Cell objects)
+#    has %.colrow;       # a hash indexed by Excel A1 label (col A, row 1)
+say "Iterating over sheet 1:";
+
+my $s = $wb.sheet<1>;
+my @rows = @($s.row);
+say "Number rows = {@rows.elems}";
+ROW: for @rows -> $r {
+    try my @cells = @($r);
+    say "Number cells = {@rows.elems}";
+    if $! {
+        say();
+        next ROW;
+    }
+    CELL: for @cells.kv -> $i, $c {
+        try my $val = $c.value;
+        if $! {
+            next CELL;
+        }
+        print ", " if $i;
+        print "'$val'";
+    }
+    say()
+}
+say "EOF";
