@@ -96,5 +96,16 @@ for $wb.Sheet -> $s {
     }
 }
 
-say "List of sheets by indexx:";
+say "List of sheets by index:";
+#has %.sheet   is rw;      # key: sheet name, value: index 1..N of N sheets
+my @idx = 1..$wb.sheet.elems;
+#for $wb.sheet.keys.sort -> $i {
+for @idx -> $i {
+    my $s = $wb.sheet{$i};
+    try say "  $i. '{$s.label}'";
+    if $! {
+        # the "first" sheet is Nil
+        next;
+    }
+}
 

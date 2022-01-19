@@ -16,6 +16,9 @@ has $.sheets  is rw;      # number of sheets
 has $.parser  is rw;      # name of parser used
 has $.type    is rw;      # of the parser used: xlsx, xls, csv, etc.
 has $.version is rw;      # of the parser used
+
+# convenience attrs
+has Sheet @.Sheet; # array of Sheet objects
 #   with array or hash values
 has %.sheet   is rw;      # key: sheet name, value: index 1..N of N sheets
 
@@ -25,8 +28,6 @@ has $.no-trim is rw = 0; # default behavior is to trim trailing empty cells from
 # only contains one element
 #has @.parsers is rw;      # array of parser pairs hashes, keys: name, type, version
 
-# convenience attrs
-has Sheet @.Sheet; # array of Sheet objects
 # input attrs:
 has $.file is required;
 has $.debug;
@@ -99,6 +100,7 @@ say @rows.gist;
         %h    = $pbook[$index];
         my $s = Sheet.new;
         $.Sheet.push: $s;
+        %.sheet{$index} = $s;
         collect-sheet-data(%h, :$index, :$s, :$debug);
     }
 
