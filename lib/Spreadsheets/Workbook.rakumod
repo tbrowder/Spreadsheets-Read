@@ -38,10 +38,6 @@ submethod TWEAK {
     self.read($!file)
 }
 
-#method new($fname) {
-#    self.bless(:file($fname))
-#}
-
 method read($file) {
     my $path = $file.IO.absolute // die "WARNING: no valid path";
     if !$path.IO.f {
@@ -54,36 +50,31 @@ method read($file) {
 
 method dump {
     say "DEBUG: dumping workbook, file basename: {$.basename}";
-        say "  == \%.sheet hash:";
-        for %.sheet.keys.sort -> $k {
-            my $v = %.sheet{$k};
-            say "    '$k' => '$v'";
-        }
-        say "DEBUG: dumping sheet row/cols";
-        my $i = 0;
-        for @.Sheet -> $s {
-            ++$i;
-            say "=== sheet $i...";
-            #$s.dump;
-            try {
-                $s.dump-csv;
-            }
-            if $! {
-                say "=== one or more failures while dumping sheet $i...";
-                say $!.Str;
-            }
-        }
-
+    say "  == \%.sheet hash:";
+    for %.sheet.keys.sort -> $k {
+        my $v = %.sheet{$k};
+        say "    '$k' => '$v'";
     }
-
-    method copy {
-        # returns a copy of this Workbook object
+    say "DEBUG: dumping sheet row/cols";
+    my $i = 0;
+    for @.Sheet -> $s {
+        ++$i;
+        say "=== sheet $i...";
+        #$s.dump;
+        try {
+            $s.dump-csv;
+        }
+        if $! {
+            say "=== one or more failures while dumping sheet $i...";
+            say $!.Str;
+        }
     }
+}
 
-#} # end of class Workbook
+method copy {
+    # returns a copy of this Workbook object
+}
 
-
-#### subroutines ####
 method collect-file-data(
     :$path, 
     #Workbook :$wb!, 
@@ -477,10 +468,10 @@ sub collect-sheet-data(%h, :$index, Sheet :$s!, :$debug) is export {
 sub collect-cell-data($cell, Sheet :$s!, :$debug) is export {
 } # sub collect-cell-data
 
+#| Determines the type of $v, then converts
+#| $v to either a string with value 'undef'
+#| or retains its value.
 sub get-typ-and-val($v, :$debug) is export {
-    # Determines the type of $v, then converts
-    # $v to either a string with value 'undef'
-    # or retains its value.
     my $t = $v.^name;
     my $vv = $v // 'undef';
     $t = $vv.^name;
@@ -493,10 +484,42 @@ sub get-typ-and-val($v, :$debug) is export {
     return ($t, $vv, $ne);
 } # sub get-typ-and-val
 
+#| Given an Excel A1 style colrow id, transform it to zero-based
+#| row/col form.
 sub colrow2cell($a1-id, :$debug) is export {
-    # Given an Excel A1 style colrow id, transform it to zero-based
-    # row/col form.
     my ($i, $j);
 
-    return $i, $j;
+    #                    column           row
+    if $a1-id ~~ /^ :i (<[a..z]>+) (<[1..9]> <[0..9]>*) $/ {
+        my $a = ~$0; # column value
+        my $b = +$1; # row value
+        # TODO convert the pieces to row-col zero-indexed
+    }
+    else {
+        die "ERROR: Invalid A1 format: '$a1-id'"
+    }
+
+    $i, $j
 } # sub colrow2cell
+
+#| (4) => (D)
+sub col2label(Int $col is copy where $col > 0) is export {
+    my $label = "";
+    while $col {
+        $label.substr-rw(0, 0) = chr(--$col mod 26 + ord("A"));
+        $col = $col div 26;
+    }
+    $label
+} # sub col2label
+
+#| (D) => (4)
+sub label2col($label is copy where $label ~~ /^:i <[A..Z]>+$/) is export {
+    $label .= uc;
+    my $col = 0;
+    while $label ~~ s/^(<[A..Z]>)// {
+        $col = 26 * $col + 1 + ord(~$0) - ord("A");
+    }
+    $col
+} # sub label2col
+
+
