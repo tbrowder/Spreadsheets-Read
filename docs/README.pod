@@ -66,7 +66,7 @@ XLSX file (known as a workbook).
 A CSV spreadsheet may have the first row defined as a header row with
 unique identifiers as keys to a hash of each column.
 
-Spreadsheet cells may be acccessed in various ways to suit the tastes
+Spreadsheet cells may be accessed in various ways to suit the tastes
 of the user. For example, given a spreadsheet C<$s>:
 
 =head3 Single cell (e.g., row 0, column 2)
