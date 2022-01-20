@@ -53,7 +53,7 @@ for @*ARGS {
     when /^d/ {
         $debug = 1;
     }
-    when /s(\d)/ {
+    when /s(\d+)/ {
         $sheet = +$0;
     }
     when /(1|2|3|4|5|6|7)/ {
@@ -112,24 +112,24 @@ for @idx -> $i {
 #class Sheet is export {
 #    has Row @.row;      # an array of Row objects (each Row object has an array of Cell objects)
 #    has %.colrow;       # a hash indexed by Excel A1 label (col A, row 1)
-say "Iterating over sheet 1:";
+say "Iterating over sheet $sheet:";
 
-my $s = $wb.sheet<1>;
+my $s = $wb.sheet{$sheet};
 my @rows = @($s.row);
 say "Number rows = {@rows.elems}";
-ROW: for @rows -> $r {
-    try my @cells = @($r);
-    say "Number cells = {@rows.elems}";
+ROW: for @rows.kv -> $i, $r {
+    try my @cells = @($r.cell);
+    say "Row $i, number cells = {@cells.elems}";
     if $! {
         say();
         next ROW;
     }
-    CELL: for @cells.kv -> $i, $c {
+    CELL: for @cells.kv -> $j, $c {
         try my $val = $c.value;
         if $! {
             next CELL;
         }
-        print ", " if $i;
+        print ", " if $j;
         print "'$val'";
     }
     say()
