@@ -1,0 +1,215 @@
+=begin pod
+
+=head1 NAME
+
+Spreadsheets::Read - Provides Raku read access to a variety of spreadsheet formats using a Perl module
+
+=head1 SYNOPSIS
+
+=begin code :lang<raku>
+use Spreadsheets::Read;
+my $workbook = Spreadsheets::Read.new: 'somefile.csv';
+=end code
+
+The input file may be in either CSV, XLSX, ODS, XLS, or SXC format.
+All input files are assumed to have a header row unless the C<:no-header-row> option is added.
+
+=head1 DESCRIPTION
+
+B<Spreadsheets::Read> is intended to be a reasonably universal spreadsheet
+reader for the formats shown below. It relies on some
+well-tested Perl modules.
+
+Its unique strength is a common set of classes to make spreadsheet
+data use easy regardless of the file format being used.
+
+=head2 Supported formats
+
+=begin table
+Read | Notes
+-----+-------
+CSV  | 
+ODS  |
+SXC  |
+XLS  |
+XLSX |
+=end table
+
+=head2 System requirements
+
+=begin table
+Perl modules                  | Debian package | Notes
+---                           | ---            | ---
+Spreadsheet::Read             | libspreadsheet-read-perl
+Spreadsheet::ParseExcel       | libspreadsheet-parseexcel-perl
+Spreadsheet::ParseXLSX        | *libspreadsheet-parsexlsx-perl
+Spreadsheet::ReadSXC          | libspreadsheet-readsxc-perl
+Text::CSV                     | libtext-csv-perl
+=end table
+
+* NOTE: Ubuntu users do not have access to the packages
+marked with an asterisk. Instead, they can do the following:
+
+=begin code
+sudo apt-get install -y cpanminus
+sudo cpanm Spreadsheet::ParseXLSX
+=end code
+
+=head2 Design
+
+This module is designed to treat data as a two-dimensional array of
+data cells (row, column; zero indexed), commonly referred to as a
+'spreadsheet', represented by a Sheet object. Multiple spreadsheets
+can be children of a Workbook object which is modeled after an Excel
+XLSX file (known as a workbook).
+
+A CSV spreadsheet may have the first row defined as a header row with
+unique identifiers as keys to a hash of each column.
+
+Spreadsheet cells may be accessed in various ways to suit the tastes
+of the user. For example, given a spreadsheet C<$s>:
+
+=head3 Single cell (e.g., row 0, column 2)
+
+=table
+$s.cell(0,2)
+$s.rowcol(0,2)
+$s.colrow(2,0)
+$s[0;2] | Raku syntax
+$s<c1>  | Excel A1 syntax
+$s<C1>  | Excel A1 syntax
+
+=head3 Row of cells (a one-dimensional array)
+
+=table
+$s.row(0)  | the entire row
+$s[0;0..2] | row 0, columns 0 through 2
+$s<1>      | Excel A1 syntax
+
+=head3 Column of cells (a one-dimensional array)
+
+=table
+$s.col(0)      | the entire column
+$s[;0]
+$s<a>          | Excel A1 syntax
+$s[0..2;0]     | column 0, rows 0 through 2
+$s.col(0,0..2) | column 0, rows 0 through 2
+
+=head3 Rectangular range of cells (a two-dimensional array)
+
+=table
+$s.rowcol(0..2,0..1) |
+$s[0..2;0..1]
+$s<a1:c2>            | Excel A1 syntax
+
+=head2 Data model
+
+The data model is based on the one described and used in Perl module
+C<Spreadsheet::Read>. Its data elements are used to populate the classes
+described above (with adjustments to transform the 1-indexed rows and
+columns to the zero-indexed rows and columns of this module).
+Note all cells with 'Undef' values are converted to an empty string (C<''>)
+in the Raku object. Additionally, sheets are trimmed to remove trailing
+empty rows and remaining rows are trimmed to the length of the 
+row with the greatest non-empty cell column index.
+
+=begin code
+$book = [
+    # Entry 0 is the overall control hash
+    { sheets  => 2,
+      sheet   => {
+        "Sheet 1"  => 1,
+        "Sheet 2"  => 2,
+        },
+      parsers => [ {
+          type    => "xls",
+          parser  => "Spreadsheet::ParseExcel",
+          version => 0.59,
+          }],
+      error   => undef,
+      },
+    # Entry 1 is the first sheet
+    { parser  => 0,
+      label   => "Sheet 1",
+      maxrow  => 2,
+      maxcol  => 4,
+      cell    => [ undef,
+        [ undef, 1 ],
+        [ undef, undef, undef, undef, undef, "Nugget" ],
+        ],
+      # The following 'attr' array is expanded during default reads by the Raku
+      # Spreadsheet module. See an example in the next code section.
+      attr    => [],
+      merged  => [],
+      active  => 1,
+      A1      => 1,
+      B5      => "Nugget",
+      },
+    # Entry 2 is the second sheet
+    { parser  => 0,
+      label   => "Sheet 2",
+      :
+      :
+=end code
+
+The 'attr' array provides much cell formatting data
+which enables a fair amount of automatic `xlsx` formatting upon writes.
+An example follows:
+
+=begin code
+attr   =>
+[
+  undef,
+  [ undef, {
+    type    => "numeric",
+    fgcolor => "#ff0000",
+    bgcolor => undef,
+    font    => "Arial",
+    size    => undef,
+    format  => "## ##0.00",
+    halign  => "right",
+    valign  => "top",
+    uline   => 0,
+    bold    => 0,
+    italic  => 0,
+    wrap    => 0,
+    merged  => 0,
+    hidden  => 0,
+    locked  => 0,
+    enc     => "utf-8",
+    },
+  ],
+  [ undef, undef, undef, undef, undef, {
+    type    => "text",
+    fgcolor => "#e2e2e2",
+    bgcolor => undef,
+    font    => "Letter Gothic",
+    size    => 15,
+    format  => undef,
+    halign  => "left",
+    valign  => "top",
+    uline   => 0,
+    bold    => 0,
+    italic  => 0,
+    wrap    => 0,
+    merged  => 0,
+    hidden  => 0,
+    locked  => 0,
+    enc     => "iso8859-1",
+    },
+  ],
+],
+=end code
+
+=head1 AUTHOR
+
+Tom Browder <tbrowder@acm.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright &#x00A9; 2020-2022 Tom Browder
+
+This library is free software; you may redistribute it or modify it under the Artistic License 2.0.
+
+=end pod
+
