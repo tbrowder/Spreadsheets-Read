@@ -72,35 +72,23 @@ of the user. For example, given a spreadsheet C<$s>:
 =head3 Single cell (e.g., row 0, column 2)
 
 =table
-$s.cell(0,2)
-$s.rowcol(0,2)
-$s.colrow(2,0)
-$s[0;2] | Raku syntax
-$s<c1>  | Excel A1 syntax
-$s<C1>  | Excel A1 syntax
+$s.cell(0,2) | row, col (zero-indexed)
+$s.rowcol(0,2) | row, col (zero-indexed)
+$s.colrow(2,0) | col, row (zero-indexed)
+$s.cell('c1') | Excel A1 syntax
+$s.cell('C1') | Excel A1 syntax
 
 =head3 Row of cells (a one-dimensional array)
 
 =table
 $s.row(0)  | the entire row
-$s[0;0..2] | row 0, columns 0 through 2
-$s<1>      | Excel A1 syntax
+$s.cell('1') | Excel A1 syntax
 
 =head3 Column of cells (a one-dimensional array)
 
 =table
 $s.col(0)      | the entire column
-$s[;0]
-$s<a>          | Excel A1 syntax
-$s[0..2;0]     | column 0, rows 0 through 2
-$s.col(0,0..2) | column 0, rows 0 through 2
-
-=head3 Rectangular range of cells (a two-dimensional array)
-
-=table
-$s.rowcol(0..2,0..1) |
-$s[0..2;0..1]
-$s<a1:c2>            | Excel A1 syntax
+$s.cell('A') | Excel A1 syntax
 
 =head2 Data model
 
@@ -110,8 +98,7 @@ described above (with adjustments to transform the 1-indexed rows and
 columns to the zero-indexed rows and columns of this module).
 Note all cells with 'Undef' values are converted to an empty string (C<''>)
 in the Raku object. Additionally, sheets are trimmed to remove trailing
-empty rows and remaining rows are trimmed to the length of the 
-row with the greatest non-empty cell column index.
+empty rows and remaining rows are trimmed to remove trailing empty cells.
 
 =begin code
 $book = [
